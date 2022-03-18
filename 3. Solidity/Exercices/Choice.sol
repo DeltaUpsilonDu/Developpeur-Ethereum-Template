@@ -1,11 +1,11 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-3.0
 
 pragma solidity 0.8.12;
 
 contract Choice {
-    mapping(address=> uint) choices;
- 
+    mapping(address => uint) choices;
+
     function add(uint _myuint) public {
-       choices[msg.sender] = _myuint;
-  }
+        choices[msg.sender] = _myuint;
+    }
 }
