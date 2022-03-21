@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 /// @title A decentralized voting system
 /// @author Sébastien Dupertuis
-/// @notice This contract puts in place a voting system 
+/// @notice Topic of the first smart contract project for Alyra school - Blockchain developper
 /// @dev 
 contract Voting is Ownable {
     //------------------------------------------------------------------------------------
@@ -46,9 +46,9 @@ contract Voting is Ownable {
     /// @notice Table of voters addresses (used to reset the voting)
     address[] private whitelist;
     /// @notice Table of proposals
-    Proposal[] public proposals;
+    Proposal[] private proposals;
     /// @notice Variable containing the winning proposal ID
-    uint public winningProposalId;
+    uint private winningProposalId;
 
     //------------------------------------------------------------------------------------
     // ------------------------------------Events-----------------------------------------
@@ -64,6 +64,15 @@ contract Voting is Ownable {
     event Voted (address voter, uint proposalId);
  
     //------------------------------------------------------------------------------------
+    // ----------------------------------Constructor--------------------------------------
+    //------------------------------------------------------------------------------------
+
+    /// @notice The constructor initializing the admin as a voter
+    constructor () {
+        addVoter(msg.sender);
+    }
+
+    //------------------------------------------------------------------------------------
     // -----------------------------------Modifiers---------------------------------------
     //------------------------------------------------------------------------------------
 
@@ -78,7 +87,7 @@ contract Voting is Ownable {
     //------------------------------------------------------------------------------------
 
     /// @notice This function allows the owner to manage the voting status
-    /// @dev 
+    /// @dev Function to be called by the admin through the front end
     function nextStatus() external onlyOwner {
         require(status != WorkflowStatus.VotesTallied, "The voting has already ended.");    // Make sure the voting is not finished
         
@@ -89,11 +98,11 @@ contract Voting is Ownable {
     }
 
     /// @notice This function allows the owner to add a voter in the whitelist
-    /// @dev 
+    /// @dev Function to be called by the admin through the front end
     /// @param _address The address to be added in the whitelist
-    function addVoter(address _address) external onlyOwner {
-        require(_address != address(0),"The address needs to be different from zero.");             // Make sure the address is valid
+    function addVoter(address _address) public onlyOwner {
         require(status == WorkflowStatus.RegisteringVoters,"The registering period is over.");      // Make sure the registration phase is still in progress
+        require(_address != address(0),"The address needs to be different from zero.");             // Make sure the address is valid
         require(voters[_address].isRegistered == false,"This voter has been already registered.");   // Revert if the voter was already registered (to aboid unnecessary actions)
 
         // Add the voter in the whitelist (mapping and array)
@@ -104,7 +113,7 @@ contract Voting is Ownable {
     }
 
     /// @notice This function allows the voters to place a proposal
-    /// @dev 
+    /// @dev Function to be called by the voters through the front end
     /// @param _description The description of the proposal
     function addProposal(string memory _description) external onlyVoters {
         require(status == WorkflowStatus.ProposalsRegistrationStarted,"The proposal registering period is over or has not strted yet.");      // Make sure the proposal registration phase is in progress
@@ -117,7 +126,7 @@ contract Voting is Ownable {
     }
 
     /// @notice This function allows the voters to vote for a single proposal
-    /// @dev 
+    /// @dev Function to be called by the voters through the front end
     /// @param _proposalID The proposal ID that receive a vote
     function setVote(uint _proposalID) external onlyVoters {
         require(status == WorkflowStatus.VotingSessionStarted,"The proposal voting period is over or has not started yet.");      // Make sure the voting phase is in progress
@@ -133,9 +142,9 @@ contract Voting is Ownable {
     }
 
     /// @notice This function calculate the voting result.
-    /// @dev 
+    /// @dev Function to be called by the admin through the front end
     function calculateResult() external onlyOwner {
-        require(status == WorkflowStatus.VotingSessionEnded,"The voting is still in progress.");        // Make sure the voting is finished
+        require(status == WorkflowStatus.VotingSessionEnded,"The voting is still in progress or has not started yet.");        // Make sure the voting is finished
         require(proposals.length > 0,"There are no proposals in the list.");                            // Make sure there is at least one proposal in the list
 
         for(uint i=1;i<proposals.length;i++) {
@@ -146,22 +155,53 @@ contract Voting is Ownable {
     }
 
     /// @notice This function returns the voting result. The result is opened to anyone
-    /// @dev 
-    function getWinner() external view returns (uint,string memory) {
+    /// @dev Function to be called by anyone through the front end
+    /// @return Returns the winning proposal ID, his description and the amount of votes
+    function getWinner() external view returns (uint,string memory,uint) {
         require(status == WorkflowStatus.VotesTallied,"The voting is still in progress.");      // Make sure the voting is finished
 
-        return (winningProposalId,proposals[winningProposalId].description);
+        return (winningProposalId,proposals[winningProposalId].description,proposals[winningProposalId].voteCount);
     }
 
     /// @notice This function allows the voters to see what the other voters have voted
-    /// @dev 
+    /// @dev Function to be called by the voters through the front end
     /// @param _address The address to check the vote
+    /// @return Returns the voted ID of the given voter defined by _address
     function getVotedID(address _address) external view onlyVoters returns (uint) {
-        require(_address != address(0),"The address needs to be different from zero.");             // Make sure the address is valid
         require(status >= WorkflowStatus.VotingSessionStarted,"The voting period did not start yet.");      // Make sure the voting phase has started
+        require(_address != address(0),"The address needs to be different from zero.");             // Make sure the address is valid
         require(voters[_address].isRegistered == true,"This address does not belong to the whitelist.");
         require(voters[_address].hasVoted == true,"This voter has not voted yet.");   // Revert if the voter has not voted yet
     
         return voters[_address].votedProposalId;    // Return the vote of the requested voter
     }
+
+    /// @notice This function resets the voting once closed
+    /// @dev Function to be called by the admin through the front end
+    function reset() external onlyOwner{
+        require(status == WorkflowStatus.VotesTallied, "The voting is still ongoing.");    // Make sure the voting is finished
+
+        status = WorkflowStatus.RegisteringVoters;  // Reset status
+        emit WorkflowStatusChange(WorkflowStatus(WorkflowStatus.VotesTallied),status);  // Raise the event to log the status change 
+
+        winningProposalId = 0;                      // Reset winning ID
+
+        // Reset proposal table
+        uint proposalsTabSize=proposals.length;
+        for (uint i=proposalsTabSize; i>0; i--){
+            proposals.pop();
+        }
+
+        // Reset voters mapping
+        uint whiteListSize=whitelist.length;
+        address  tempAddress;
+        for (uint i=whiteListSize; i>0; i--){
+            tempAddress=whitelist[i-1];
+            voters[tempAddress] = Voter(false,false,0); 
+            whitelist.pop();
+        }
+
+        addVoter(msg.sender);   // Re-add admin as a voter
+    }
+
 }
