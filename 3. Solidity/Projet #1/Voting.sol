@@ -62,8 +62,6 @@ contract Voting is Ownable {
     event ProposalRegistered(uint proposalId);
     /// @notice Event raised when voter has voted
     event Voted (address voter, uint proposalId);
-
-    // Constructor
  
     //------------------------------------------------------------------------------------
     // -----------------------------------Modifiers---------------------------------------
