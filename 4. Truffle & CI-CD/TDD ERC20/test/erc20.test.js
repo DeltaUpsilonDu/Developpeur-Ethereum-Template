@@ -42,15 +42,15 @@ it('vérifie si un transfer est bien effectué', async function (){
   expect(balanceOwnerAfterTransfer).to.be.bignumber.equal(balanceOwnerBeforeTransfer.sub(amount));
   expect(balanceRecipientAfterTransfer).to.be.bignumber.equal(balanceRecipientBeforeTransfer.add(amount));
 });
-/*
+
 it('vérifie que l addresse zéro n est pas acceptée', async function (){
     let amount = new BN(10);
 
     //expect(await this.ERC20Instance.approve(ZERO_ADDRESS,amount)).to.be.false;
 
-    await expectRevert(this.ERC20Instance.approve(ZERO_ADDRESS,amount,{from: owner}),"ERC20: approve from the zero address");
+    await expectRevert(this.ERC20Instance.approve(ZERO_ADDRESS,amount,{from: owner}),"ERC20: approve to the zero address");
 } );
-*/
+
 it('vérifie si un approve est bien effectué', async function (){
     let allowanceSpenderBeforeApprove = await this.ERC20Instance.allowance(owner, spender);
     let amount = new BN(10);
