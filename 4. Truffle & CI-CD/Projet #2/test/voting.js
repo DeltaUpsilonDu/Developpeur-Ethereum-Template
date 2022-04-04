@@ -336,13 +336,3 @@ contract('voting', accounts => {
     });
 
 });
-
-/*
-enum  WorkflowStatus {
-    RegisteringVoters,
-    ProposalsRegistrationStarted,
-    ProposalsRegistrationEnded,
-    VotingSessionStarted,
-    VotingSessionEnded,
-    VotesTallied
-}*/
