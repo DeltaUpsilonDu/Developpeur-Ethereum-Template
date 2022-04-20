@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.13;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "../node_modules/@openzeppelin/contracts/access/Ownable.sol";
 
 /// @title A decentralized voting system
 /// @author Sébastien Dupertuis
