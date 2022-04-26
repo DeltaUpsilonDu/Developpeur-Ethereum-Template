@@ -20,3 +20,12 @@
 .App-link {
   color: #09d3ac;
 }
+
+.Account {
+  text-align: right;
+  margin-right:2em;
+}
+
+.FormLabel {
+  text-align: left;
+}
